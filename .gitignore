@@ -1,0 +1,6 @@
+build
+dist
+rubberduck_ai.egg-info
+__pycache__
+rubberduck_chat/chat_gpt/__pycache__
+rubberduck_chat/rd/__pycache__
