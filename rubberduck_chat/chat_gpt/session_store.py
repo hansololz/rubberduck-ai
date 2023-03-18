@@ -23,43 +23,10 @@ class GptRole(Enum):
   ASSISTANT = 'assistant'
 
 
-def convert_string_to_gpt_role(string: str) -> GptRole:
-  return GptRole[string.upper()]
-
-
 @dataclass
 class Session:
   session_id: str
   last_active_time: int
-
-
-@dataclass
-class GptMessage:
-  def __init__(self, created_time: int, role: GptRole, content: str):
-    self.created_time: int = created_time
-    self.role: GptRole = role
-    self.content: str = content
-
-  @classmethod
-  def from_line(cls, line: str):
-    message = json.loads(line)
-    created_time = int(message.get('created_time'))
-    role = convert_string_to_gpt_role(message.get('role'))
-    content = message.get('content')
-    return cls(created_time, role, content)
-
-  def get_message(self) -> dict:
-    return {
-      'role': self.role.value,
-      'content': self.content
-    }
-
-  def get_line(self) -> str:
-    return json.dumps({
-      'created_time': self.created_time,
-      'role': self.role.value,
-      'content': self.content
-    })
 
 
 class GptSessionMetadata:
@@ -79,12 +46,35 @@ class GptSessionMetadata:
 
 
 class GptSystemMessage:
-  def __init__(self, system_message: GptMessage):
-    self.system_message: GptMessage = system_message
+  def __init__(self, system_message_id: str, created_time: int, content: str):
+    self.system_message_id = system_message_id
+    self.created_time: int = created_time
+    self.content: str = content
 
   @classmethod
-  def from_system_message(cls, system_message: str):
-    return cls(GptMessage(int(time.time()), GptRole.SYSTEM, system_message))
+  def from_system_message(cls, content: str):
+    return cls(str(uuid4()), int(time.time()), content)
+
+  @classmethod
+  def from_json_string(cls, line: str):
+    message = json.loads(line)
+    system_message_id = message.get('system_message_id')
+    created_time = int(message.get('created_time'))
+    content = message.get('content')
+    return cls(system_message_id, created_time, content)
+
+  def get_json_string(self) -> str:
+    return json.dumps({
+      'system_message_id': self.system_message_id,
+      'created_time': self.created_time,
+      'content': self.content
+    })
+
+  def get_chat_gpt_request_message(self) -> dict:
+    return {
+      'role': 'system',
+      'content': self.content
+    }
 
 
 class GptChatTurn:
@@ -264,9 +254,9 @@ def store_metadata_to_file(session_id: str, message: GptSessionMetadata):
     file.write(f'{message.get_line()}\n')
 
 
-def store_message_to_file(session_id: str, message: GptMessage):
+def store_system_message_to_file(session_id: str, message: GptSystemMessage):
   with open(get_gpt_session_filepath(session_id), 'a') as file:
-    file.write(f'{message.get_line()}\n')
+    file.write(f'{message.get_json_string()}\n')
 
 
 def store_chat_turn_to_file(session_id: str, message: GptChatTurn):

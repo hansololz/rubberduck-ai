@@ -19,11 +19,11 @@ class GptChatSession:
   def __init__(self, session_id, session_metadata: GptSessionMetadata, system_message: GptSystemMessage,
                turns: list[GptChatTurn]):
     self.session_id: str = session_id
-    self.session_metadata = session_metadata
-    self.system_message = system_message
+    self.session_metadata: GptSessionMetadata = session_metadata
+    self.system_message: GptSystemMessage = system_message
     self.turns: list[GptChatTurn] = turns
-    self.prompt_to_remember = 10
-    self.console = Console()
+    self.prompt_to_remember: int = 10
+    self.console: Console = Console()
     self.snippets: list[str] = []
 
   @classmethod
@@ -36,7 +36,7 @@ class GptChatSession:
     lines: list[str] = fetch_session_data(session_id)
 
     gpt_session_metadata: GptSessionMetadata = GptSessionMetadata.from_line(lines[0])
-    gpt_system_message: GptSystemMessage = GptSystemMessage(GptMessage.from_line(lines[1]))
+    gpt_system_message: GptSystemMessage = GptSystemMessage.from_json_string(lines[1])
     gpt_chat_turns: list[GptChatTurn] = []
     turn_ids: set[str] = set()
 
@@ -69,7 +69,7 @@ class GptChatSession:
     current_turn = GptChatTurn.from_user_prompt(prompt)
     self.store_chat_turn(current_turn)
     self.turns.append(current_turn)
-    messages: list[dict] = [self.system_message.system_message.get_message()]
+    messages: list[dict] = [self.system_message.get_chat_gpt_request_message()]
 
     for turn in self.turns[-self.prompt_to_remember:]:
       messages.append(turn.get_user_prompt_message())
@@ -169,7 +169,7 @@ class GptChatSession:
       store_chat_turn_to_file(self.session_id, gpt_chat_turn)
     else:
       store_metadata_to_file(self.session_id, self.session_metadata)
-      store_message_to_file(self.session_id, self.system_message.system_message)
+      store_system_message_to_file(self.session_id, self.system_message)
       store_chat_turn_to_file(self.session_id, gpt_chat_turn)
 
 
