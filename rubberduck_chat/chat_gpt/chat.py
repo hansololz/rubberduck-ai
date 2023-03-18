@@ -8,7 +8,6 @@ from rich.console import Console
 from rich.syntax import Syntax
 
 from rubberduck_chat.chat_gpt.session_store import *
-from rubberduck_chat.configs import config_collection
 from rubberduck_chat.utils import get_datetime
 
 
@@ -171,39 +170,8 @@ class GptChatSession:
 
 class GptChat:
 
-  def __init__(self):
-    self.session = self.get_initial_session()
-
-  def get_initial_session(self) -> GptChatSession:
-    always_continue_last_session = config_collection.always_continue_last_session.get_value() == 'True'
-    active_session = get_active_session()
-
-    if always_continue_last_session and active_session:
-      gpt_chat_session = GptChatSession.from_session_id(active_session.session_id)
-      session_preview = get_preview_for_session(active_session.session_id)
-      if session_preview:
-        print(f'Continuing from session: {session_preview.session_preview}')
-
-      return gpt_chat_session
-
-    if active_session:
-      old_session_cutoff_time_in_seconds = int(config_collection.inactive_session_cutoff_time_in_seconds.get_value())
-      is_active_session_expired = int(
-        time.time()) - old_session_cutoff_time_in_seconds > active_session.last_active_time
-
-      if not is_active_session_expired:
-        gpt_chat_session = GptChatSession.from_session_id(active_session.session_id)
-        session_preview = get_preview_for_session(active_session.session_id)
-        if session_preview:
-          print(f'Continuing from session: {session_preview.session_preview}')
-
-        return gpt_chat_session
-
-    session = GptChatSession.create_new()
-    set_active_session_id(session.session_id)
-    print('Started new session')
-
-    return session
+  def __init__(self, session: GptChatSession = None):
+    self.session = session
 
   def process_prompt(self, prompt: str):
     self.session.process_prompt(prompt)
