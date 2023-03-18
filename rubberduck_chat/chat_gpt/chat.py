@@ -55,8 +55,8 @@ class GptChatSession:
     gpt_chat_turns: list[GptChatTurn] = []
     turn_ids: set[str] = set()
 
-    for index in range(len(lines), 2):
-      turn = GptChatTurn.from_json_string(lines[index])
+    for line in lines[-1:1:-1]:
+      turn = GptChatTurn.from_json_string(line)
 
       if turn.id in turn_ids:
         continue
@@ -68,9 +68,9 @@ class GptChatSession:
 
     return cls(session_id, gpt_session_metadata, gpt_system_message, gpt_chat_turns)
 
-  def print_current_session(self, print_date=False):
+  def print_current_session(self, print_time=False):
     for turn in self.turns:
-      if print_date:
+      if print_time:
         create_time = f'[{get_datetime(turn.created_time)}] '
       else:
         create_time = ''
@@ -236,7 +236,7 @@ class GptChat:
     self.session.copy_snippet(snippet_index)
 
   def print_current_session(self):
-    self.session.print_current_session(print_date=True)
+    self.session.print_current_session(print_time=True)
 
   def change_session(self):
     session_previews = get_all_session_previews()
@@ -258,6 +258,6 @@ class GptChat:
     if answers:
       preview: GptSessionPreview = answers['option']
       self.session = GptChatSession.from_session_id(preview.session_id)
-      self.session.print_current_session(print_date=True)
+      self.session.print_current_session(print_time=True)
       set_active_session_id(preview.session_id)
       print(f'Loaded session: {preview.session_preview}')
