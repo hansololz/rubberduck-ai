@@ -12,17 +12,6 @@ from rubberduck_chat.configs import config_collection
 from rubberduck_chat.utils import get_datetime
 
 
-def get_message_from_response(response: dict) -> Optional[str]:
-  choices = response['choices']
-
-  if not choices:
-    return None
-
-  choice = choices[0]
-  message = choice['message']['content']
-  return message
-
-
 class GptChatSession:
   snippet_end_pattern = r'\s*```'
   snippet_start_pattern = r'\s*```(\S+)?'
@@ -221,7 +210,7 @@ class GptChat:
 
   def create_new_session(self):
     self.session = GptChatSession.create_new()
-    unset_active_session_id()
+    set_active_session_id(self.session.session_id)
     print('Started new session')
 
   def has_snippet(self, snippet_index: int) -> bool:

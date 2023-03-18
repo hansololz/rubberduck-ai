@@ -3,10 +3,10 @@ import json
 import os
 import shelve
 import time
-from uuid import uuid4
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
+from uuid import uuid4
 
 from rubberduck_chat.store import rubberduck_dir_name
 from rubberduck_chat.utils import get_datetime
@@ -205,6 +205,7 @@ def remove_old_sessions(max_sessions):
 
     os.remove(get_gpt_session_filepath(session_file))
 
+
 def get_all_session_previews() -> list[GptSessionPreview]:
   filenames = os.listdir(get_gpt_session_dir_path())
   previews: list[GptSessionPreview] = []
@@ -238,7 +239,6 @@ def get_preview_for_session(session_id: str) -> Optional[GptSessionPreview]:
   chat_turn = get_most_recent_chat_turn(session_id)
 
   if chat_turn:
-    user_prompt = chat_turn.user_prompt
     return GptSessionPreview(f'[{get_datetime(chat_turn.created_time)}] {chat_turn.user_prompt}', session_id)
   else:
     return None
@@ -272,11 +272,6 @@ def store_message_to_file(session_id: str, message: GptMessage):
 def store_chat_turn_to_file(session_id: str, message: GptChatTurn):
   with open(get_gpt_session_filepath(session_id), 'a') as file:
     file.write(f'{message.to_json_string()}\n')
-
-
-def unset_active_session_id():
-  with shelve.open(get_gpt_dir_filepath(gpt_cache_name)) as shelf:
-    shelf['active_session_id'] = ''
 
 
 def set_active_session_id(active_session_id: str):
