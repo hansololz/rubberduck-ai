@@ -78,12 +78,17 @@ class GptChatSession:
         messages.append(assistant_response_message)
 
     response = None
+    error_message = None
 
     with Halo(text='Fetching', spinner='dots'):
       try:
         response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=messages)
       except Exception as error:
-        print(str(error))
+        error_message = str(error)
+
+    if error_message:
+      print(error_message)
+      return
 
     if response:
       current_turn.updated_response(response)
