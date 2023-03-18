@@ -1,8 +1,6 @@
-ChatGPT command-line client
-===========================
+# ChatGPT command-line client
 
-Installation
-------------
+## Installation
 
 ### Manual Installation
 
@@ -14,8 +12,7 @@ Installation
 
     pip3 install rubberduck-ai
 
-Authentication
---------------
+## Authentication
 
 ### Authentication Token
 The CLI tool requires Open AI authentication token. Token can be obtained 
@@ -27,10 +24,12 @@ Choose one of these options to authenticate the CLI tool:
 - Use a command argument: `rda --openai-api-key=<AUTHENTICATION_TOKEN>`.
 - Enter the API key when prompted while running the CLI tool.
 
-Usage
------
+## Usage
+
 ### Evaluation Loop
-Run the application: `rda`.
+Run the application:
+    
+    rda
 
 #### Supported Commands
 - .n .new: Create new session
