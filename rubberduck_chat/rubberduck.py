@@ -7,7 +7,8 @@ from rubberduck_chat.store import setup_rubberduck_dir
 
 parser = argparse.ArgumentParser(description='Rubberduck AI')
 parser.add_argument('single_prompt', nargs='?', default=None, help='Single prompt for the chat session.')
-parser.add_argument('--openai-api-key', required=False, help='OpenAI API key.')
+parser.add_argument('-k', '--openai-api-key', required=False, help='OpenAI API key.')
+parser.add_argument('-p', '--print-session', action='store_true', required=False, help='Print current session.')
 args = parser.parse_args()
 
 
@@ -17,7 +18,9 @@ def main():
 
   gpt_chat = setup_gpt(args.openai_api_key)
 
-  if args.single_prompt:
+  if args.print_session:
+    gpt_chat.print_current_session()
+  elif args.single_prompt:
     gpt_chat.process_prompt(args.single_prompt)
   else:
     print_hello_message()

@@ -45,7 +45,7 @@ def setup_gpt_credentials(openai_api_key: Optional[str]):
 
 def ask_for_key_input():
   print('Update or delete key. Press Ctrl+C to cancel.')
-  message = 'Option: '
+  message = 'Option'
   options = [
     ('Enter new key', 'new_key'),
     ('Remove key', 'remove_key'),
