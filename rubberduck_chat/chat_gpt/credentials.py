@@ -3,6 +3,7 @@ import getpass
 import os
 from typing import Optional
 
+import inquirer
 import openai
 
 from rubberduck_chat.chat_gpt.session_store import gpt_dir_name
@@ -43,13 +44,25 @@ def setup_gpt_credentials(openai_api_key: Optional[str]):
 
 
 def ask_for_key_input():
-  print('Enter empty input to remove key. Press Ctrl+C to cancel.')
-  try:
-    key = getpass.getpass('Openai API Key: ')
-    cache_openai_api_key(key)
-    openai.api_key = get_openai_api_key()
-  except KeyboardInterrupt:
-    print('')
+  print('Update or delete key. Press Ctrl+C to cancel.')
+  message = 'Option: '
+  options = [
+    ('Enter new key', 'new_key'),
+    ('Remove key', 'remove_key'),
+  ]
+
+  answers = inquirer.prompt([inquirer.List('option', message=message, choices=options)])
+
+  if answers:
+    if answers['option'] == 'new_key':
+      key = getpass.getpass('Openai API Key: ')
+      cache_openai_api_key(key)
+      openai.api_key = get_openai_api_key()
+      print('Key updated')
+    elif answers['option'] == 'remove_key':
+      delete_openai_api_key()
+      openai.api_key = None
+      print('Key removed')
 
 
 def get_openai_api_key() -> Optional[str]:
@@ -74,6 +87,13 @@ def get_openai_api_key_from_environment() -> Optional[str]:
     return None
 
 
+def delete_openai_api_key():
+  credentials.remove_option(default_credentials_section_name, 'openai_api_key')
+
+  with open(get_credentials_filepath(), 'w') as configfile:
+    credentials.write(configfile)
+
+
 def cache_openai_api_key(key: str):
   credentials[default_credentials_section_name] = {
     'openai_api_key': key
@@ -84,6 +104,9 @@ def cache_openai_api_key(key: str):
 
 def get_openai_api_key_from_config() -> Optional[str]:
   if not os.path.exists(get_credentials_filepath()):
+    return None
+
+  if not credentials.has_option(default_credentials_section_name, 'openai_api_key'):
     return None
 
   key = credentials.get(default_credentials_section_name, 'openai_api_key')
