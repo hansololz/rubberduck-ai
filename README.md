@@ -1,4 +1,4 @@
-# ChatGPT command-line client
+# ChatGPT CLI Client
 
 ## Installation
 
