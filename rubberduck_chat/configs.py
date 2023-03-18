@@ -1,5 +1,6 @@
 import configparser
 import os
+import platform
 from dataclasses import dataclass
 
 from rubberduck_chat.store import rubberduck_dir_name
@@ -7,7 +8,6 @@ from rubberduck_chat.store import rubberduck_dir_name
 configs_filename = 'configs.ini'
 default_config_section_name = 'default'
 config_array_delimiter = ','
-
 
 configs = configparser.ConfigParser()
 
@@ -41,7 +41,7 @@ class ConfigSet:
   )
   supported_command_cli = ConfigEntry(
     'supported_command_cli',
-    config_array_delimiter.join(['clear', 'ls', 'cd']),
+    config_array_delimiter.join(['clear', 'ls', 'cd'] if platform.system() == 'Windows' else ['cls', 'dir', 'cd']),
     ''
   )
   exit_command_trigger = ConfigEntry(
