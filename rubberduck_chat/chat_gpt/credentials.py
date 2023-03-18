@@ -27,7 +27,8 @@ def setup_gpt_credentials(openai_api_key: Optional[str]):
     openai.api_key = openai_api_key
     return
 
-  if get_openai_api_key() is not None:
+  if get_openai_api_key():
+    openai.api_key = get_openai_api_key()
     return
 
   print('Open AI API Key required. You can get one at https://beta.openai.com/account/api-keys.')
@@ -49,6 +50,7 @@ def ask_for_key_input():
   options = [
     ('Enter new key', 'new_key'),
     ('Remove key', 'remove_key'),
+    ('Print key', 'print_key'),
   ]
 
   answers = inquirer.prompt([inquirer.List('option', message=message, choices=options)])
@@ -56,13 +58,21 @@ def ask_for_key_input():
   if answers:
     if answers['option'] == 'new_key':
       key = getpass.getpass('Openai API Key: ')
-      cache_openai_api_key(key)
-      openai.api_key = get_openai_api_key()
-      print('Key updated')
+
+      if key:
+        cache_openai_api_key(key)
+        openai.api_key = get_openai_api_key()
+        print('Key updated')
     elif answers['option'] == 'remove_key':
       delete_openai_api_key()
       openai.api_key = None
       print('Key removed')
+    elif answers['option'] == 'print_key':
+      key = get_openai_api_key()
+      if key:
+        print(f'Key: {key}')
+      else:
+        print('No key found')
 
 
 def get_openai_api_key() -> Optional[str]:
