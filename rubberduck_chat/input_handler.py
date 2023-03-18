@@ -48,6 +48,10 @@ def start_evaluation_loop(gpt_chat: GptChat):
       exit()
 
 
+def print_hello_message():
+  print('Welcome to Rubberduck AI v0.1')
+
+
 def print_get_help_message():
   help_commands = config_collection.help_command_trigger.get_value().split(config_array_delimiter)
 

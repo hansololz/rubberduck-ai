@@ -31,12 +31,7 @@ def restore_previous_session() -> Optional[GptChatSession]:
   active_session = get_active_session()
 
   if always_continue_last_session and active_session:
-    gpt_chat_session = GptChatSession.from_session_id(active_session.session_id)
-    session_preview = get_preview_for_session(active_session.session_id)
-    if session_preview:
-      print(f'Continuing from session: {session_preview.session_preview}')
-
-    return gpt_chat_session
+    return GptChatSession.from_session_id(active_session.session_id)
 
   if active_session:
     old_session_cutoff_time_in_seconds = int(config_collection.inactive_session_cutoff_time_in_seconds.get_value())
@@ -44,12 +39,7 @@ def restore_previous_session() -> Optional[GptChatSession]:
       time.time()) - old_session_cutoff_time_in_seconds > active_session.last_active_time
 
     if not is_active_session_expired:
-      gpt_chat_session = GptChatSession.from_session_id(active_session.session_id)
-      session_preview = get_preview_for_session(active_session.session_id)
-      if session_preview:
-        print(f'Continuing from session: {session_preview.session_preview}')
-
-      return gpt_chat_session
+      return GptChatSession.from_session_id(active_session.session_id)
 
   return None
 
@@ -57,6 +47,13 @@ def restore_previous_session() -> Optional[GptChatSession]:
 def get_new_session() -> Optional[GptChatSession]:
   session = GptChatSession.create_new()
   set_active_session_id(session.session_id)
-  print('Started new session')
   return session
 
+
+def print_session_preview_message(session: GptChatSession):
+  if session.turns:
+    session_preview = get_preview_for_session(session.session_id)
+    if session_preview:
+      print(f'Continuing from session: {session_preview.session_preview}')
+  else:
+    print('Started new session')
