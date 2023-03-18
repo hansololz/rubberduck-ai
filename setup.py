@@ -1,17 +1,15 @@
-from rubberduck_chat import __version__
 from setuptools import find_packages, setup
+
+from rubberduck_chat import __version__
 
 with open('requirements.txt') as f:
   requirements = [line for line in f.read().splitlines() if line]
-
-with open("README.md") as readme_file:
-  readme = readme_file.read()
 
 setup(
   name='rubberduck-ai',
   version=__version__,
   description='A CLI tool for ChatGPT.',
-  long_description=readme,
+  url='https://github.com/hansololz/rubberduck-ai',
 
   keywords=["rda", 'openai', 'ChatGPT', 'chat'],
   packages=find_packages(),
