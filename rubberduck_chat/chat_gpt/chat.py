@@ -6,11 +6,11 @@ import pyperclip
 from halo import Halo
 from rich.console import Console
 from rich.syntax import Syntax
+from rubberduck_chat.configs import config_collection
 
 from rubberduck_chat.chat_gpt.credentials import get_openai_api_key
 from rubberduck_chat.chat_gpt.session_store import *
 from rubberduck_chat.utils import get_datetime
-from rubberduck_chat.configs import config_collection
 
 
 def get_message_from_response(response: dict) -> Optional[str]:
@@ -29,9 +29,11 @@ class GptChatSession:
   snippet_start_pattern = r'\s*```(\S+)?'
   quote_pattern = re.compile(r'`([^`]*)`')
 
-  def __init__(self, session_filename, session_metadata: GptSessionMetadata, system_message: GptSystemMessage,
+  def __init__(self, session_id, session_metadata: GptSessionMetadata, system_message: GptSystemMessage,
                turns: list[GptChatTurn]):
-    self.session_filename: Optional[str] = session_filename
+
+    print(f"NEW SESSION {session_id}")
+    self.session_id: str = session_id
     self.session_metadata = session_metadata
     self.system_message = system_message
     self.turns: list[GptChatTurn] = turns
@@ -42,14 +44,14 @@ class GptChatSession:
   @classmethod
   def create_new(cls):
     message = GptSystemMessage.from_system_message('You are a helpful assistant')
-    return cls(None, GptSessionMetadata(int(time.time())), message, [])
+    return cls(str(uuid4()), GptSessionMetadata(int(time.time())), message, [])
 
   @classmethod
-  def from_session_filename(cls, session_filename):
-    lines = fetch_session_data(session_filename)
+  def from_session_id(cls, session_id: str):
+    lines: list[str] = fetch_session_data(session_id)
 
-    gpt_session_metadata = GptSessionMetadata.from_line(lines[0])
-    gpt_system_message = GptSystemMessage(GptMessage.from_line(lines[1]))
+    gpt_session_metadata: GptSessionMetadata = GptSessionMetadata.from_line(lines[0])
+    gpt_system_message: GptSystemMessage = GptSystemMessage(GptMessage.from_line(lines[1]))
     gpt_chat_turns: list[GptChatTurn] = []
     turn_ids: set[str] = set()
 
@@ -64,7 +66,7 @@ class GptChatSession:
 
     gpt_chat_turns.reverse()
 
-    return cls(session_filename, gpt_session_metadata, gpt_system_message, gpt_chat_turns)
+    return cls(session_id, gpt_session_metadata, gpt_system_message, gpt_chat_turns)
 
   def print_current_session(self, print_date=False):
     for turn in self.turns:
@@ -171,63 +173,60 @@ class GptChatSession:
       print('No snippet to copy')
 
   def store_chat_turn(self, gpt_chat_turn: GptChatTurn):
-    if not self.session_filename:
-      self.session_filename = create_session_filename()
-
     if self.turns:
-      store_chat_turn_to_file(self.session_filename, gpt_chat_turn)
+      store_chat_turn_to_file(self.session_id, gpt_chat_turn)
     else:
-      store_metadata_to_file(self.session_filename, self.session_metadata)
-      store_message_to_file(self.session_filename, self.system_message.system_message)
-      store_chat_turn_to_file(self.session_filename, gpt_chat_turn)
+      store_metadata_to_file(self.session_id, self.session_metadata)
+      store_message_to_file(self.session_id, self.system_message.system_message)
+      store_chat_turn_to_file(self.session_id, gpt_chat_turn)
 
 
 class GptChat:
 
   def __init__(self):
-    self.session = None
+    self.session = self.get_initial_session()
     openai.api_key = get_openai_api_key()
 
-    def start_new_session():
-      self.session = GptChatSession.create_new()
-      unset_active_session()
-      print('Started new session')
+  def get_initial_session(self) -> GptChatSession:
+    always_continue_last_session = config_collection.always_continue_last_session.get_value() == 'True'
+    active_session = get_active_session()
 
-    def continue_from_session(session_filename: str):
-      self.session = GptChatSession.from_session_filename(session_filename)
-      session_preview = get_preview_from_session_file(session_filename)
+    print(f'Aways {always_continue_last_session}')
+    print(active_session)
+
+    if always_continue_last_session and active_session:
+      gpt_chat_session = GptChatSession.from_session_id(active_session.session_id)
+      session_preview = get_preview_for_session(active_session.session_id)
       if session_preview:
         print(f'Continuing from session: {session_preview.session_preview}')
 
-    always_continue_last_session = config_collection.always_continue_last_session.get_value() == 'True'
+      return gpt_chat_session
 
-    if always_continue_last_session:
-      active_session = get_active_session()
+    if active_session:
+      old_session_cutoff_time_in_seconds = int(config_collection.inactive_session_cutoff_time_in_seconds.get_value())
+      is_active_session_expired = int(
+        time.time()) - old_session_cutoff_time_in_seconds > active_session.last_active_time
 
-      if active_session:
-        continue_from_session(active_session.filename)
-        return
+      if not is_active_session_expired:
+        gpt_chat_session = GptChatSession.from_session_id(active_session.session_id)
+        session_preview = get_preview_for_session(active_session.session_id)
+        if session_preview:
+          print(f'Continuing from session: {session_preview.session_preview}')
 
-    active_session = get_active_session()
+        return gpt_chat_session
 
-    if not active_session:
-      start_new_session()
-      return
+    session = GptChatSession.create_new()
+    set_active_session_id(session.session_id)
+    print('Started new session')
 
-    old_session_cutoff_time_in_seconds = int(config_collection.inactive_session_cutoff_time_in_seconds.get_value())
-
-    if int(time.time()) - old_session_cutoff_time_in_seconds > active_session.last_active_time:
-      start_new_session()
-      return
-
-    continue_from_session(active_session.filename)
+    return session
 
   def process_prompt(self, prompt: str):
     self.session.process_prompt(prompt)
 
   def create_new_session(self):
     self.session = GptChatSession.create_new()
-    unset_active_session()
+    unset_active_session_id()
     print('Started new session')
 
   def has_snippet(self, snippet_index: int) -> bool:
@@ -258,7 +257,7 @@ class GptChat:
 
     if answers:
       preview: GptSessionPreview = answers['option']
-      self.session = GptChatSession.from_session_filename(preview.session_filename)
+      self.session = GptChatSession.from_session_id(preview.session_id)
       self.session.print_current_session(print_date=True)
-      set_active_session_filename(preview.session_filename)
+      set_active_session_id(preview.session_id)
       print(f'Loaded session: {preview.session_preview}')

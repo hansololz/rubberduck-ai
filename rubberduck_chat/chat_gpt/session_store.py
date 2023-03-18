@@ -29,7 +29,7 @@ def convert_string_to_gpt_role(string: str) -> GptRole:
 
 @dataclass
 class Session:
-  filename: str
+  session_id: str
   last_active_time: int
 
 
@@ -152,7 +152,7 @@ class GptChatTurn:
 @dataclass
 class GptSessionPreview:
   session_preview: str
-  session_filename: str
+  session_id: str
 
 
 def get_gpt_dir_path() -> str:
@@ -198,7 +198,7 @@ def cleanup_old_sessions(max_session_count):
 
     # Do no remove active session, even if it old enough to be cleanup. This is to make sure the use can have a session
     # to continue from
-    if active_session and filename == active_session.filename:
+    if active_session and filename == active_session.session_id:
       continue
 
     os.remove(get_gpt_session_filepath(filename))
@@ -210,10 +210,10 @@ def get_all_session_previews() -> list[GptSessionPreview]:
   active_session = get_active_session()
 
   for filename in filenames:
-    if active_session and active_session.filename == filename:
+    if active_session and active_session.session_id == filename:
       maybe_preview = get_active_session_preview_from_session_file(filename)
     else:
-      maybe_preview = get_preview_from_session_file(filename)
+      maybe_preview = get_preview_for_session(filename)
 
     if maybe_preview:
       previews.append(maybe_preview)
@@ -223,86 +223,76 @@ def get_all_session_previews() -> list[GptSessionPreview]:
   return previews
 
 
-def get_active_session_preview_from_session_file(session_filename) -> Optional[GptSessionPreview]:
-  user_prompt = get_most_recent_user_prompt(session_filename)
+def get_active_session_preview_from_session_file(session_id) -> Optional[GptSessionPreview]:
+  chat_turn = get_most_recent_chat_turn(session_id)
 
-  if user_prompt:
-    preview = f'[{get_datetime(user_prompt.created_time)}] [Current Session] {user_prompt.content}'
-    return GptSessionPreview(preview, session_filename)
+  if chat_turn:
+    preview = f'[{get_datetime(chat_turn.created_time)}] [Current Session] {chat_turn.user_prompt}'
+    return GptSessionPreview(preview, session_id)
   else:
     return None
 
 
-def get_preview_from_session_file(session_filename) -> Optional[GptSessionPreview]:
-  user_prompt = get_most_recent_user_prompt(session_filename)
+def get_preview_for_session(session_id: str) -> Optional[GptSessionPreview]:
+  chat_turn = get_most_recent_chat_turn(session_id)
 
-  if user_prompt:
-    return GptSessionPreview(f'[{get_datetime(user_prompt.created_time)}] {user_prompt.content}', session_filename)
+  if chat_turn:
+    user_prompt = chat_turn.user_prompt
+    return GptSessionPreview(f'[{get_datetime(chat_turn.created_time)}] {chat_turn.user_prompt}', session_id)
   else:
     return None
 
 
-def get_most_recent_user_prompt(session_filename: str) -> Optional[GptMessage]:
-  with open(get_gpt_session_filepath(session_filename), 'r') as file:
-    last_two_lines = collections.deque(file, 2)
+def get_most_recent_chat_turn(session_id: str) -> Optional[GptChatTurn]:
+  with open(get_gpt_session_filepath(session_id), 'r') as file:
+    last_line = collections.deque(file, 1)
 
-    if len(last_two_lines) >= 2:
-      second_prompt = GptMessage.from_line(last_two_lines[1])
-      if second_prompt.role == GptRole.USER:
-        return second_prompt
-
-    if len(last_two_lines) >= 1:
-      first_prompt = GptMessage.from_line(last_two_lines[0])
-      if first_prompt.role == GptRole.USER:
-        return first_prompt
-
-  return None
+    if last_line:
+      return GptChatTurn.from_json_string(last_line[0])
+    else:
+      return None
 
 
-def fetch_session_data(session_filename: str) -> list[str]:
-  with open(get_gpt_session_filepath(session_filename), 'r') as file:
+def fetch_session_data(session_id: str) -> list[str]:
+  with open(get_gpt_session_filepath(session_id), 'r') as file:
     return file.readlines()
 
 
-def store_metadata_to_file(session_filename: str, message: GptSessionMetadata):
-  with open(get_gpt_session_filepath(session_filename), 'a') as file:
+def store_metadata_to_file(session_id: str, message: GptSessionMetadata):
+  with open(get_gpt_session_filepath(session_id), 'a') as file:
     file.write(f'{message.get_line()}\n')
 
 
-def store_message_to_file(session_filename: str, message: GptMessage):
-  with open(get_gpt_session_filepath(session_filename), 'a') as file:
+def store_message_to_file(session_id: str, message: GptMessage):
+  with open(get_gpt_session_filepath(session_id), 'a') as file:
     file.write(f'{message.get_line()}\n')
 
 
-def store_chat_turn_to_file(session_filename: str, message: GptChatTurn):
-  with open(get_gpt_session_filepath(session_filename), 'a') as file:
+def store_chat_turn_to_file(session_id: str, message: GptChatTurn):
+  with open(get_gpt_session_filepath(session_id), 'a') as file:
     file.write(f'{message.to_json_string()}\n')
 
 
-def create_session_filename() -> str:
-  return str(uuid4())
-
-
-def unset_active_session():
+def unset_active_session_id():
   with shelve.open(get_gpt_dir_filepath(gpt_cache_name)) as shelf:
-    shelf['active_session_filename'] = ''
+    shelf['active_session_id'] = ''
 
 
-def set_active_session_filename(active_session_filename: str):
+def set_active_session_id(active_session_id: str):
   with shelve.open(get_gpt_dir_filepath(gpt_cache_name)) as shelf:
-    shelf['active_session_filename'] = active_session_filename
+    shelf['active_session_id'] = active_session_id
     shelf['active_session_last_active_time'] = int(time.time())
 
 
 def get_active_session() -> Optional[Session]:
   with shelve.open(get_gpt_dir_filepath(gpt_cache_name)) as shelf:
-    if 'active_session_filename' not in shelf or 'active_session_last_active_time' not in shelf:
+    if 'active_session_id' not in shelf or 'active_session_last_active_time' not in shelf:
       return None
 
-    active_session_filename = str(shelf['active_session_filename'])
+    active_session_id = str(shelf['active_session_id'])
     active_session_time = int(str(shelf['active_session_last_active_time']))
 
-    if len(active_session_filename) > 0 and os.path.exists(get_gpt_session_filepath(active_session_filename)):
-      return Session(active_session_filename, active_session_time)
+    if len(active_session_id) > 0 and os.path.exists(get_gpt_session_filepath(active_session_id)):
+      return Session(active_session_id, active_session_time)
     else:
       return None
