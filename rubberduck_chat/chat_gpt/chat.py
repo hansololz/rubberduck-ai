@@ -13,7 +13,7 @@ from rubberduck_chat.utils import get_datetime
 from rubberduck_chat.configs import config_collection
 
 
-def get_message_from_response(response) -> Optional[str]:
+def get_message_from_response(response: dict) -> Optional[str]:
   choices = response['choices']
 
   if not choices:
@@ -51,60 +51,55 @@ class GptChatSession:
     gpt_session_metadata = GptSessionMetadata.from_line(lines[0])
     gpt_system_message = GptSystemMessage(GptMessage.from_line(lines[1]))
     gpt_chat_turns: list[GptChatTurn] = []
+    turn_ids: set[str] = set()
 
-    current_turn: Optional[GptChatTurn] = None
+    for index in range(len(lines), 2):
+      turn = GptChatTurn.from_json_string(lines[index])
 
-    for line_index in range(2, len(lines)):
-      message = GptMessage.from_line(lines[line_index])
+      if turn.id in turn_ids:
+        continue
 
-      if current_turn:
-        if message.role == GptRole.ASSISTANT:
-          current_turn.updated_assistant_response_with_message(message)
-          current_turn = None
-        if message.role == GptRole.USER:
-          current_turn = GptChatTurn(message, None)
-          gpt_chat_turns.append(current_turn)
-      else:
-        if message.role == GptRole.USER:
-          current_turn = GptChatTurn(message, None)
-          gpt_chat_turns.append(current_turn)
+      turn_ids.add(turn.id)
+      gpt_chat_turns.append(turn)
+
+    gpt_chat_turns.reverse()
 
     return cls(session_filename, gpt_session_metadata, gpt_system_message, gpt_chat_turns)
 
   def print_current_session(self, print_date=False):
     for turn in self.turns:
       if print_date:
-        create_time = f' [{get_datetime(turn.user_prompt.created_time)}] '
+        create_time = f'[{get_datetime(turn.created_time)}] '
       else:
         create_time = ''
 
-      print(f'>>>{create_time}{turn.user_prompt.content}')
-      if turn.assistant_response:
-        self.print_assistant_response(turn.assistant_response.content)
+      print(f'>>>{create_time}{turn.user_prompt}')
+      assistant_response = turn.get_assistant_response()
+      if assistant_response:
+        self.print_assistant_response(assistant_response)
 
   def process_prompt(self, prompt: str):
     current_turn = GptChatTurn.from_user_prompt(prompt)
-    self.store_user_prompt(current_turn)
+    self.store_chat_turn(current_turn)
     self.turns.append(current_turn)
-    messages = [self.system_message.system_message.get_message()]
+    messages: list[dict] = [self.system_message.system_message.get_message()]
 
     for turn in self.turns[-self.prompt_to_remember:]:
-      user_prompt = turn.user_prompt.get_message()
-      messages.append(user_prompt)
-      if turn.assistant_response:
-        messages.append(turn.assistant_response.get_message())
+      messages.append(turn.get_user_prompt_message())
+      assistant_response_message = turn.get_assistant_response_message()
+      if assistant_response_message:
+        messages.append(assistant_response_message)
 
     with Halo(text='Fetching', spinner='dots'):
       try:
         response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=messages)
-        message = get_message_from_response(response)
       except Exception as error:
-        print(error)
+        print(str(error))
 
-    if message:
-      current_turn.updated_assistant_response(message)
-      self.store_assistant_message(current_turn)
-      self.print_assistant_response(message)
+    if response:
+      current_turn.updated_response(response)
+      self.store_chat_turn(current_turn)
+      self.print_assistant_response(current_turn.get_assistant_response())
     else:
       print('No results found')
 
@@ -175,21 +170,16 @@ class GptChatSession:
     else:
       print('No snippet to copy')
 
-  def store_user_prompt(self, gpt_chat_turn: GptChatTurn):
+  def store_chat_turn(self, gpt_chat_turn: GptChatTurn):
     if not self.session_filename:
       self.session_filename = create_session_filename()
 
-    set_active_session_filename(self.session_filename)
-
     if self.turns:
-      store_message_to_file(self.session_filename, gpt_chat_turn.user_prompt)
+      store_chat_turn_to_file(self.session_filename, gpt_chat_turn)
     else:
       store_metadata_to_file(self.session_filename, self.session_metadata)
       store_message_to_file(self.session_filename, self.system_message.system_message)
-      store_message_to_file(self.session_filename, gpt_chat_turn.user_prompt)
-
-  def store_assistant_message(self, gpt_chat_turn: GptChatTurn):
-    store_message_to_file(self.session_filename, gpt_chat_turn.assistant_response)
+      store_chat_turn_to_file(self.session_filename, gpt_chat_turn)
 
 
 class GptChat:

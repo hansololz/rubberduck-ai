@@ -3,7 +3,7 @@ import json
 import os
 import shelve
 import time
-import uuid
+from uuid import uuid4
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
@@ -88,19 +88,65 @@ class GptSystemMessage:
 
 
 class GptChatTurn:
-  def __init__(self, user_prompt: GptMessage, assistant_response: Optional[GptMessage]):
-    self.user_prompt: GptMessage = user_prompt
-    self.assistant_response: Optional[GptMessage] = assistant_response
+  def __init__(self, turn_id: str, created_time: int, user_prompt: str, response: Optional[dict]):
+    self.id: str = turn_id
+    self.created_time: int = created_time
+    self.user_prompt: str = user_prompt
+    self.response: Optional[dict] = response
 
   @classmethod
   def from_user_prompt(cls, message: str):
-    return cls(GptMessage(int(time.time()), GptRole.USER, message), None)
+    return cls(str(uuid4()), int(time.time()), message, None)
 
-  def updated_assistant_response(self, message: str):
-    self.assistant_response = GptMessage(int(time.time()), GptRole.ASSISTANT, message)
+  @classmethod
+  def from_json_string(cls, json_string: str):
+    json_data = json.loads(json_string)
+    turn_id = json_data.get('id')
+    created_time = json_data.get('created_time')
+    user_prompt = json_data.get('user_prompt')
+    response = json_data.get('response', None)
+    return cls(turn_id, created_time, user_prompt, response)
 
-  def updated_assistant_response_with_message(self, message: GptMessage):
-    self.assistant_response = message
+  def to_json_string(self) -> str:
+    data = {
+      'id': self.id,
+      'created_time': self.created_time,
+      'user_prompt': self.user_prompt,
+    }
+
+    if self.response:
+      data['response'] = self.response
+
+    return json.dumps(data)
+
+  def updated_response(self, response: Optional[dict]):
+    self.response = response
+
+  def get_assistant_response(self) -> Optional[str]:
+    if not self.response or 'choices' not in self.response:
+      return None
+
+    if len(self.response['choices']) > 0:
+      return self.response['choices'][0]['message']['content']
+    else:
+      return None
+
+  def get_user_prompt_message(self) -> dict:
+    return {
+      'role': GptRole.USER.value,
+      'content': self.user_prompt
+    }
+
+  def get_assistant_response_message(self) -> Optional[dict]:
+    content = self.get_assistant_response()
+
+    if not content:
+      return None
+
+    return {
+      'role': GptRole.ASSISTANT.value,
+      'content': content
+    }
 
 
 @dataclass
@@ -140,8 +186,8 @@ def cleanup_old_sessions(max_session_count):
   for filename in filenames:
     with open(get_gpt_session_filepath(filename), 'r') as file:
       last_line = collections.deque(file, 1)[0]
-      message = GptMessage.from_line(last_line)
-      filenames_and_latest_message_time.append((filename, message.created_time))
+      turn = GptChatTurn.from_json_string(last_line)
+      filenames_and_latest_message_time.append((filename, turn.created_time))
 
   filenames_and_latest_message_time.sort(key=lambda tu: tu[1])
   files_to_delete = filenames_and_latest_message_time[max_session_count:]
@@ -228,8 +274,13 @@ def store_message_to_file(session_filename: str, message: GptMessage):
     file.write(f'{message.get_line()}\n')
 
 
+def store_chat_turn_to_file(session_filename: str, message: GptChatTurn):
+  with open(get_gpt_session_filepath(session_filename), 'a') as file:
+    file.write(f'{message.to_json_string()}\n')
+
+
 def create_session_filename() -> str:
-  return str(uuid.uuid4())
+  return str(uuid4())
 
 
 def unset_active_session():
