@@ -5,8 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b3c9fa12-ccd3-4f38-a9a1-f5e1ac825bf4" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/publish.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rubberduck_chat/configs.py" beforeDir="false" afterPath="$PROJECT_DIR$/rubberduck_chat/configs.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

@@ -36,7 +36,7 @@ class ConfigSet:
   )
   inactive_session_cutoff_time_in_seconds = ConfigEntry(
     'inactive_session_cutoff_time_in_seconds',
-    str(10800),
+    str(172800),
     'Continue from the previous session if you recently interacted with the previous session'
   )
   supported_command_cli = ConfigEntry(
