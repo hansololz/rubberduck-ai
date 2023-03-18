@@ -4,15 +4,12 @@ from rubberduck_chat.chat_gpt.chat import GptChat
 from rubberduck_chat.chat_gpt.credentials import ask_for_key_input
 from rubberduck_chat.configs import *
 
-try:
-  import readline
-except ImportError:
-  try:
-    from pyreadline3 import Readline
-
-    readline = Readline()
-  except ImportError:
-    pass
+if platform.system() == 'Windows':
+  from pyreadline3 import Readline
+  readline = Readline()
+else:
+  import readline as readline_input
+  readline = readline_input
 
 
 class Command:
