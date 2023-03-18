@@ -5,10 +5,15 @@ from rubberduck_chat import __version__
 with open('requirements.txt') as f:
   requirements = [line for line in f.read().splitlines() if line]
 
+with open("README.md", "r") as fh:
+  long_description = fh.read()
+
 setup(
   name='rubberduck-ai',
   version=__version__,
   description='A CLI tool for ChatGPT.',
+  long_description=long_description,
+  long_description_content_type="text/markdown",
   url='https://github.com/hansololz/rubberduck-ai',
 
   keywords=["rda", 'openai', 'ChatGPT', 'chat'],
