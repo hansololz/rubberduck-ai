@@ -2,7 +2,7 @@ from rubberduck_chat import __version__
 from setuptools import find_packages, setup
 
 with open('requirements.txt') as f:
-  requirements = [l for l in f.read().splitlines() if l]
+  requirements = [line for line in f.read().splitlines() if line]
 
 with open("README.md") as readme_file:
   readme = readme_file.read()
