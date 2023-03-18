@@ -20,7 +20,14 @@ def get_credentials_filepath() -> str:
 credentials.read(get_credentials_filepath())
 
 
-def setup_gpt_credentials():
+def setup_gpt_credentials(openai_api_key: Optional[str]):
+  print(f"KEY {openai_api_key}")
+
+  if openai_api_key:
+    openai.api_key = openai_api_key
+    print(f"KEY {openai.api_key}")
+    return
+
   if get_openai_api_key() is not None:
     return
 

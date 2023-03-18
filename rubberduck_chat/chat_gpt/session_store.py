@@ -179,30 +179,31 @@ def create_get_gpt_session_dir():
   os.makedirs(get_gpt_session_dir_path(), exist_ok=True)
 
 
-def cleanup_old_sessions(max_session_count):
-  filenames = os.listdir(get_gpt_session_dir_path())
-  filenames_and_latest_message_time: list[tuple[str, int]] = []
+def remove_old_sessions(max_sessions):
+  session_dir = get_gpt_session_dir_path()
+  session_files = os.listdir(session_dir)
+  session_files_and_timestamps: list[tuple[str, int]] = []
 
-  for filename in filenames:
-    with open(get_gpt_session_filepath(filename), 'r') as file:
-      last_line = collections.deque(file, 1)[0]
-      turn = GptChatTurn.from_json_string(last_line)
-      filenames_and_latest_message_time.append((filename, turn.created_time))
+  for session_file in session_files:
+    session_file_path = get_gpt_session_filepath(session_file)
+    with open(session_file_path, 'r') as file_handle:
+      last_line = collections.deque(file_handle, 1)[0]
+      chat_turn = GptChatTurn.from_json_string(last_line)
+      session_files_and_timestamps.append((session_file, chat_turn.created_time))
 
-  filenames_and_latest_message_time.sort(key=lambda tu: tu[1])
-  files_to_delete = filenames_and_latest_message_time[max_session_count:]
-  active_session = get_active_session()
+  session_files_and_timestamps.sort(key=lambda pair: pair[1])
+  files_to_remove = session_files_and_timestamps[max_sessions:]
+  current_session = get_active_session()
 
-  for filename_and_time in files_to_delete:
-    filename = filename_and_time[0]
+  for session_file_and_timestamp in files_to_remove:
+    session_file = session_file_and_timestamp[0]
 
-    # Do no remove active session, even if it old enough to be cleanup. This is to make sure the use can have a session
-    # to continue from
-    if active_session and filename == active_session.session_id:
+    # Do not remove the current session, even if it is old enough to be removed.
+    # This ensures that the user can continue their session.
+    if current_session and session_file == current_session.session_id:
       continue
 
-    os.remove(get_gpt_session_filepath(filename))
-
+    os.remove(get_gpt_session_filepath(session_file))
 
 def get_all_session_previews() -> list[GptSessionPreview]:
   filenames = os.listdir(get_gpt_session_dir_path())

@@ -6,10 +6,9 @@ import pyperclip
 from halo import Halo
 from rich.console import Console
 from rich.syntax import Syntax
-from rubberduck_chat.configs import config_collection
 
-from rubberduck_chat.chat_gpt.credentials import get_openai_api_key
 from rubberduck_chat.chat_gpt.session_store import *
+from rubberduck_chat.configs import config_collection
 from rubberduck_chat.utils import get_datetime
 
 
@@ -31,8 +30,6 @@ class GptChatSession:
 
   def __init__(self, session_id, session_metadata: GptSessionMetadata, system_message: GptSystemMessage,
                turns: list[GptChatTurn]):
-
-    print(f"NEW SESSION {session_id}")
     self.session_id: str = session_id
     self.session_metadata = session_metadata
     self.system_message = system_message
@@ -91,6 +88,8 @@ class GptChatSession:
       assistant_response_message = turn.get_assistant_response_message()
       if assistant_response_message:
         messages.append(assistant_response_message)
+
+    response = None
 
     with Halo(text='Fetching', spinner='dots'):
       try:
@@ -185,14 +184,10 @@ class GptChat:
 
   def __init__(self):
     self.session = self.get_initial_session()
-    openai.api_key = get_openai_api_key()
 
   def get_initial_session(self) -> GptChatSession:
     always_continue_last_session = config_collection.always_continue_last_session.get_value() == 'True'
     active_session = get_active_session()
-
-    print(f'Aways {always_continue_last_session}')
-    print(active_session)
 
     if always_continue_last_session and active_session:
       gpt_chat_session = GptChatSession.from_session_id(active_session.session_id)
