@@ -74,11 +74,11 @@ class GptChatSession:
   def print_current_session(self, print_date=False):
     for turn in self.turns:
       if print_date:
-        create_time = f' [{get_datetime(turn.user_prompt.created_time)}]'
+        create_time = f' [{get_datetime(turn.user_prompt.created_time)}] '
       else:
         create_time = ''
 
-      print(f'>>>{create_time} {turn.user_prompt.content}')
+      print(f'>>>{create_time}{turn.user_prompt.content}')
       if turn.assistant_response:
         self.print_assistant_response(turn.assistant_response.content)
 
