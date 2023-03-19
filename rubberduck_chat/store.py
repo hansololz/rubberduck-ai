@@ -1,6 +1,6 @@
 import os
 
-rubberduck_dir_name = '.rubberduck'
+rubberduck_dir_name = '.rubberduck-ai'
 
 
 def setup_rubberduck_dir():
