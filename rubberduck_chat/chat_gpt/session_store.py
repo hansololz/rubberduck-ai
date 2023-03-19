@@ -176,6 +176,11 @@ def remove_old_sessions(max_sessions):
   session_files = os.listdir(session_dir)
   session_files_and_timestamps: list[tuple[str, int]] = []
 
+  if max_sessions == 0:
+    for session_file in session_files:
+      os.remove(get_gpt_session_filepath(session_file))
+    return
+
   for session_file in session_files:
     session_file_path = get_gpt_session_filepath(session_file)
     with open(session_file_path, 'r') as file_handle:
