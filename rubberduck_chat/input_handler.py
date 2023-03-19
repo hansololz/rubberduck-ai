@@ -1,5 +1,7 @@
 from typing import Callable
 
+from __init__ import __version__
+
 from rubberduck_chat.chat_gpt.chat import GptChat
 from rubberduck_chat.chat_gpt.credentials import ask_for_key_input
 from rubberduck_chat.configs import *
@@ -46,7 +48,7 @@ def start_evaluation_loop(gpt_chat: GptChat):
 
 
 def print_hello_message():
-  print('Welcome to Rubberduck AI v0.1')
+  print(f'Welcome to Rubberduck AI v{__version__}')
 
 
 def print_get_help_message():

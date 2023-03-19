@@ -17,7 +17,7 @@ def main():
 
   if args.version:
     from rubberduck_chat import __version__
-    print(__version__)
+    print(f'v{__version__}')
     return
 
   setup_rubberduck_dir()
