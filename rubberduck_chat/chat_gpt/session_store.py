@@ -14,7 +14,6 @@ from rubberduck_chat.utils import get_datetime
 gpt_dir_name = 'gpt'
 gpt_cache_name = 'gpt-cache'
 gpt_sessions_dir_name = 'sessions'
-active_session_filename_suffix = 'ACTIVE'
 
 
 class GptRole(Enum):

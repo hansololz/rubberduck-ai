@@ -58,7 +58,6 @@ def ask_for_key_input():
   if answers:
     if answers['option'] == 'new_key':
       key = getpass.getpass('Openai API Key: ')
-
       if key:
         cache_openai_api_key(key)
         openai.api_key = get_openai_api_key()
