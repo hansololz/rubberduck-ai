@@ -119,6 +119,10 @@ def get_command_triggers(gpt_chat: GptChat) -> list[Command]:
   commands += get_command(config_collection.update_key_command_trigger,
                           lambda user_input: ask_for_key_input(),
                           'Update OpenAi credential key')
+  commands += get_command(config_collection.update_config_command_trigger,
+                          lambda user_input: update_config(),
+                          'Update config')
+
 
   commands.sort(key=lambda c: len(c.trigger), reverse=True)
 

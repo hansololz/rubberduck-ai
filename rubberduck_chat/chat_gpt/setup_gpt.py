@@ -10,7 +10,7 @@ from rubberduck_chat.configs import config_collection
 
 
 def setup_gpt(openai_api_key: Optional[str]) -> GptChat:
-  max_saved_session_count = int(config_collection.max_saved_session_count.get_value())
+  max_saved_session_count = config_collection.max_saved_session_count.get_int_value()
 
   os.makedirs(get_gpt_dir_path(), exist_ok=True)
   os.makedirs(get_gpt_session_dir_path(), exist_ok=True)
@@ -27,14 +27,14 @@ def setup_gpt(openai_api_key: Optional[str]) -> GptChat:
 
 
 def restore_previous_session() -> Optional[GptChatSession]:
-  always_continue_last_session = config_collection.always_continue_last_session.get_value() == 'True'
+  always_continue_last_session = config_collection.always_continue_last_session.get_bool_value()
   active_session = get_active_session()
 
   if always_continue_last_session and active_session:
     return GptChatSession.from_session_id(active_session.session_id)
 
   if active_session:
-    old_session_cutoff_time_in_seconds = int(config_collection.inactive_session_cutoff_time_in_seconds.get_value())
+    old_session_cutoff_time_in_seconds = config_collection.inactive_session_cutoff_time_in_seconds.get_int_value()
     is_active_session_expired = int(
       time.time()) - old_session_cutoff_time_in_seconds > active_session.last_active_time
 
