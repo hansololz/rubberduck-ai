@@ -17,7 +17,10 @@ configs = configparser.ConfigParser()
 
 
 def is_valid_int(value: str) -> bool:
-  return value.isdigit()
+  if value.isdigit() and int(value) >= 0:
+    return True
+  else:
+    return False
 
 
 def is_valid_bool(value: str) -> bool:
@@ -46,7 +49,11 @@ class ConfigEntry:
 
   def get_int_value(self) -> int:
     try:
-      return int(self.get_value())
+      value = int(self.get_value())
+      if value >= 0:
+        return value
+      else:
+        return int(self.default_value)
     except ValueError:
       return int(self.default_value)
 
