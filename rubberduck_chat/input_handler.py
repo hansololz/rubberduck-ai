@@ -3,6 +3,7 @@ from typing import Callable
 from rubberduck_chat import __version__
 from rubberduck_chat.chat_gpt.chat import GptChat
 from rubberduck_chat.chat_gpt.credentials import ask_for_key_input
+from rubberduck_chat.chat_gpt.setup_gpt import get_gpt_chat_configs
 from rubberduck_chat.configs import *
 
 if platform.system() == 'Windows':
@@ -132,6 +133,7 @@ def setup_command_triggers(gpt_chat: GptChat):
 def update_config_value(gpt_chat: GptChat):
   update_config()
   setup_command_triggers(gpt_chat)
+  gpt_chat.update_configs(get_gpt_chat_configs())
 
 
 def get_command(entry: ConfigEntry, create_command_trigger: Callable, description: str) -> list[Command]:

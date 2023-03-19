@@ -9,6 +9,14 @@ from rich.syntax import Syntax
 
 from rubberduck_chat.chat_gpt.session_store import *
 from rubberduck_chat.utils import get_datetime
+from dataclasses import dataclass
+
+
+@dataclass
+class GptChatSessionConfigs:
+  max_messages_per_request: int
+  snippet_header_background_color: str
+  snippet_theme: str
 
 
 class GptChatSession:
@@ -16,23 +24,25 @@ class GptChatSession:
   snippet_start_pattern = r'\s*```(\S+)?'
   quote_pattern = re.compile(r'`([^`]*)`')
 
-  def __init__(self, session_id, session_metadata: GptSessionMetadata, system_message: GptSystemMessage,
+  def __init__(self, session_id, configs: GptChatSessionConfigs, session_metadata: GptSessionMetadata,
+               system_message: GptSystemMessage,
                turns: list[GptChatTurn]):
+
     self.session_id: str = session_id
+    self.configs: GptChatSessionConfigs = configs
     self.session_metadata: GptSessionMetadata = session_metadata
     self.system_message: GptSystemMessage = system_message
     self.turns: list[GptChatTurn] = turns
-    self.prompt_to_remember: int = 10
     self.console: Console = Console()
     self.snippets: list[str] = []
 
   @classmethod
-  def create_new(cls):
+  def create_new(cls, configs: GptChatSessionConfigs):
     message = GptSystemMessage.from_system_message('You are a helpful assistant')
-    return cls(str(uuid4()), GptSessionMetadata(int(time.time())), message, [])
+    return cls(str(uuid4()), configs, GptSessionMetadata(int(time.time())), message, [])
 
   @classmethod
-  def from_session_id(cls, session_id: str):
+  def from_session_id(cls, session_id: str, configs: GptChatSessionConfigs):
     lines: list[str] = fetch_session_data(session_id)
 
     gpt_session_metadata: GptSessionMetadata = GptSessionMetadata.from_line(lines[0])
@@ -51,7 +61,7 @@ class GptChatSession:
 
     gpt_chat_turns.reverse()
 
-    return cls(session_id, gpt_session_metadata, gpt_system_message, gpt_chat_turns)
+    return cls(session_id, configs, gpt_session_metadata, gpt_system_message, gpt_chat_turns)
 
   def print_current_session(self, print_time=False):
     for turn in self.turns:
@@ -71,7 +81,7 @@ class GptChatSession:
     self.turns.append(current_turn)
     messages: list[dict] = [self.system_message.get_chat_gpt_request_message()]
 
-    for turn in self.turns[-self.prompt_to_remember:]:
+    for turn in self.turns[-(self.configs.max_messages_per_request + 1):]:
       messages.append(turn.get_user_prompt_message())
       assistant_response_message = turn.get_assistant_response_message()
       if assistant_response_message:
@@ -140,14 +150,14 @@ class GptChatSession:
     else:
       header = f' {copy_message}'
 
-    syntax = Syntax(header, 'text', theme='monokai', background_color='#808080')
+    syntax = Syntax(header, 'text', theme='monokai', background_color=self.configs.snippet_header_background_color)
     self.console.print(syntax, overflow='fold')
 
   def print_code(self, language: str, code: str):
     if not language:
       language = 'text'
 
-    syntax = Syntax(code, language, theme='monokai')
+    syntax = Syntax(code, language, theme=self.configs.snippet_theme)
     self.console.print(syntax, overflow='fold')
 
   def print_text(self, text: str):
@@ -175,16 +185,21 @@ class GptChatSession:
 
 class GptChat:
 
-  def __init__(self, session: GptChatSession = None):
+  def __init__(self, session: GptChatSession, configs: GptChatSessionConfigs):
     self.session = session
+    self.configs = configs
 
   def process_prompt(self, prompt: str):
     self.session.process_prompt(prompt)
 
   def create_new_session(self):
-    self.session = GptChatSession.create_new()
+    self.session = GptChatSession.create_new(self.configs)
     set_active_session_id(self.session.session_id)
     print('Started new session')
+
+  def update_configs(self, configs: GptChatSessionConfigs):
+    self.configs = configs
+    self.session.configs = configs
 
   def has_snippet(self, snippet_index: int) -> bool:
     return self.session.has_snippet(snippet_index)
@@ -214,7 +229,7 @@ class GptChat:
 
     if answers:
       preview: GptSessionPreview = answers['option']
-      self.session = GptChatSession.from_session_id(preview.session_id)
+      self.session = GptChatSession.from_session_id(preview.session_id, self.configs)
       self.session.print_current_session(print_time=True)
       set_active_session_id(preview.session_id)
       print(f'Loaded session: {preview.session_preview}')

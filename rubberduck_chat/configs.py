@@ -3,6 +3,7 @@ import os
 import platform
 from dataclasses import dataclass
 from typing import Optional
+import re
 
 import inquirer
 
@@ -23,6 +24,11 @@ def is_valid_bool(value: str) -> bool:
   return value.lower() in ['true', 'false']
 
 
+def is_valid_color_code(value: str) -> bool:
+  regex = r'^#?([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
+  return re.match(regex, value) is not None
+
+
 @dataclass
 class ConfigEntry:
   name: str
@@ -30,7 +36,7 @@ class ConfigEntry:
   description: str
   value_varifier: Optional[callable]
 
-  def get_value(self):
+  def get_value(self) -> str:
     return configs[default_config_section_name][self.name]
 
   def set_value(self, value):
@@ -68,10 +74,22 @@ class ConfigSet:
     'Creat new session if previous session is inactive for this many seconds',
     is_valid_int
   )
-  supported_command_cli = ConfigEntry(
-    'supported_command_cli',
-    config_array_delimiter.join(['cls', 'dir', 'cd'] if platform.system() == 'Windows' else ['clear', 'ls', 'cd']),
-    'Supported CLI commands',
+  max_messages_per_request = ConfigEntry(
+    'max_messages_per_request',
+    str(10),
+    'Maximum number of previous chat user prompts used to generating new responses',
+    is_valid_int
+  )
+  snippet_header_background_color = ConfigEntry(
+    'snippet_header_background_color',
+    '#808080',
+    'Snippet header background color',
+    is_valid_color_code
+  )
+  snippet_theme = ConfigEntry(
+    'snippet_theme',
+    'Monokai',
+    'Snippet theme',
     None
   )
   exit_command_trigger = ConfigEntry(
@@ -116,6 +134,12 @@ class ConfigSet:
     'Commands to change configs',
     None
   )
+  supported_command_cli = ConfigEntry(
+    'supported_command_cli',
+    config_array_delimiter.join(['cls', 'dir', 'cd'] if platform.system() == 'Windows' else ['clear', 'ls', 'cd']),
+    'CLI commands supported by the chat',
+    None
+  )
 
 
 config_collection = ConfigSet()
@@ -123,7 +147,9 @@ config_collection_list: list[ConfigEntry] = [
   config_collection.max_saved_session_count,
   config_collection.always_continue_last_session,
   config_collection.inactive_session_cutoff_time_in_seconds,
-  config_collection.supported_command_cli,
+  config_collection.max_messages_per_request,
+  config_collection.snippet_header_background_color,
+  config_collection.snippet_theme,
   config_collection.exit_command_trigger,
   config_collection.help_command_trigger,
   config_collection.change_session_command_trigger,
@@ -131,6 +157,7 @@ config_collection_list: list[ConfigEntry] = [
   config_collection.new_session_command_trigger,
   config_collection.update_key_command_trigger,
   config_collection.update_config_command_trigger,
+  config_collection.supported_command_cli,
 ]
 
 

@@ -6,7 +6,7 @@ from rubberduck_chat import __version__
 
 
 def print_message():
-  print('Type `rda` in the CLI to start the chat session.')
+  print('Type `rda` in the CLI to start chat session.')
 
 
 atexit.register(print_message)
