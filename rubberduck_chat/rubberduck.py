@@ -9,10 +9,17 @@ parser = argparse.ArgumentParser(description='Rubberduck AI')
 parser.add_argument('single_prompt', nargs='?', default=None, help='Single prompt for the chat session.')
 parser.add_argument('-k', '--openai-api-key', default=None, required=False, help='OpenAI API key.')
 parser.add_argument('-p', '--print-session', action='store_true', required=False, help='Print current session.')
+parser.add_argument('-v', '--version', action='store_true', required=False, help='Print version.')
 args = parser.parse_args()
 
 
 def main():
+
+  if args.version:
+    from rubberduck_chat import __version__
+    print(__version__)
+    return
+
   setup_rubberduck_dir()
   setup_default_config()
 
