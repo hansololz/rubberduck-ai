@@ -29,24 +29,27 @@ class Session:
 
 
 class GptSessionMetadata:
-  def __init__(self, created_time: int):
+  def __init__(self, session_id: str, created_time: int):
+    self.id = session_id
     self.created_time = created_time
 
   @classmethod
   def from_line(cls, line: str):
     message = json.loads(line)
+    session_id = message.get('id')
     created_time = message.get('created_time')
-    return cls(created_time)
+    return cls(session_id, created_time)
 
   def get_line(self) -> str:
     return json.dumps({
+      'id': self.id,
       'created_time': self.created_time
     })
 
 
 class GptSystemMessage:
   def __init__(self, system_message_id: str, created_time: int, content: str):
-    self.system_message_id = system_message_id
+    self.id = system_message_id
     self.created_time: int = created_time
     self.content: str = content
 
@@ -57,14 +60,14 @@ class GptSystemMessage:
   @classmethod
   def from_json_string(cls, line: str):
     message = json.loads(line)
-    system_message_id = message.get('system_message_id')
+    system_message_id = message.get('id')
     created_time = int(message.get('created_time'))
     content = message.get('content')
     return cls(system_message_id, created_time, content)
 
   def get_json_string(self) -> str:
     return json.dumps({
-      'system_message_id': self.system_message_id,
+      'id': self.id,
       'created_time': self.created_time,
       'content': self.content
     })

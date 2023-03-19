@@ -39,7 +39,8 @@ class GptChatSession:
   @classmethod
   def create_new(cls, configs: GptChatSessionConfigs):
     message = GptSystemMessage.from_system_message('You are a helpful assistant')
-    return cls(str(uuid4()), configs, GptSessionMetadata(int(time.time())), message, [])
+    session_id = str(uuid4())
+    return cls(session_id, configs, GptSessionMetadata(session_id, int(time.time())), message, [])
 
   @classmethod
   def from_session_id(cls, session_id: str, configs: GptChatSessionConfigs):
