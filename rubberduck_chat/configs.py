@@ -1,9 +1,9 @@
 import configparser
 import os
 import platform
+import re
 from dataclasses import dataclass
 from typing import Optional
-import re
 
 import inquirer
 
@@ -172,7 +172,7 @@ def get_configs_path() -> str:
   return os.path.join(os.path.expanduser('~'), rubberduck_dir_name, configs_filename)
 
 
-def setup_default_config():
+def setup_default_config(override_existing_configs: bool = False):
   config_filepath = get_configs_path()
   configs.read(get_configs_path())
 
@@ -180,7 +180,7 @@ def setup_default_config():
     configs.add_section(default_config_section_name)
 
   for config in config_collection_list:
-    if config.name not in configs[default_config_section_name]:
+    if override_existing_configs or config.name not in configs[default_config_section_name]:
       configs[default_config_section_name][config.name] = config.default_value
 
   with open(config_filepath, 'w') as configfile:
@@ -188,7 +188,9 @@ def setup_default_config():
 
 
 def update_config():
-  options: list[tuple[str, ConfigEntry]] = []
+  options: list[tuple[str, ConfigEntry]] = [
+    ('Reset all configs', ConfigEntry('reset_all', '', '', None))
+  ]
 
   for config in config_collection_list:
     description = f'{config.description}: {config.get_value()}'
@@ -200,29 +202,33 @@ def update_config():
   if answers:
     config = answers["config"]
 
-    while True:
-      questions = [
-        inquirer.Text("new_value", message=f"New value", default=config.get_value())
-      ]
+    if config.name == 'reset_all':
+      setup_default_config(override_existing_configs=True)
+      print('Config reset to default.')
+    else:
+      while True:
+        questions = [
+          inquirer.Text("new_value", message=f"New value", default=config.get_value())
+        ]
 
-      result = inquirer.prompt(questions)
+        result = inquirer.prompt(questions)
 
-      if not result:
-        break
-
-      new_value = result['new_value']
-
-      if new_value:
-        if not config.value_varifier:
-          config.set_value(new_value)
-          print(f'Config updated with value: {new_value}')
+        if not result:
           break
-        elif config.value_varifier:
-          if config.value_varifier(new_value):
+
+        new_value = result['new_value']
+
+        if new_value:
+          if not config.value_varifier:
             config.set_value(new_value)
             print(f'Config updated with value: {new_value}')
             break
-          else:
-            print('Invalid value, please try again.')
-      else:
-        break
+          elif config.value_varifier:
+            if config.value_varifier(new_value):
+              config.set_value(new_value)
+              print(f'Config updated with value: {new_value}')
+              break
+            else:
+              print('Invalid value, please try again.')
+        else:
+          break
