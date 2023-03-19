@@ -1,16 +1,17 @@
 from typing import Callable
 
-from __init__ import __version__
-
+from rubberduck_chat import __version__
 from rubberduck_chat.chat_gpt.chat import GptChat
 from rubberduck_chat.chat_gpt.credentials import ask_for_key_input
 from rubberduck_chat.configs import *
 
 if platform.system() == 'Windows':
   from pyreadline3 import Readline
+
   readline = Readline()
 else:
   import readline as readline_input
+
   readline = readline_input
 
 
@@ -22,8 +23,11 @@ class Command:
     self.description = description
 
 
+commands: list[Command] = []
+
+
 def start_evaluation_loop(gpt_chat: GptChat):
-  commands = get_command_triggers(gpt_chat)
+  setup_command_triggers(gpt_chat)
 
   while True:
     try:
@@ -58,8 +62,7 @@ def print_get_help_message():
     print(f'Type `{help_commands[0]}` for more information')
 
 
-def process_help_command(gpt_chat: GptChat):
-  commands = get_command_triggers(gpt_chat)
+def process_help_command():
   description_to_command_map: dict[str, list[str]] = {}
 
   for command in commands:
@@ -97,47 +100,47 @@ def process_exit_command():
   exit()
 
 
-def get_command_triggers(gpt_chat: GptChat) -> list[Command]:
-  commands: list[Command] = []
+def setup_command_triggers(gpt_chat: GptChat):
+  commands.clear()
+  commands.extend(get_command(config_collection.supported_command_cli,
+                              lambda user_input: os.system(user_input),
+                              'Input is executed on the command line'))
+  commands.extend(get_command(config_collection.exit_command_trigger,
+                              lambda user_input: process_exit_command(),
+                              'Exit application'))
+  commands.extend(get_command(config_collection.help_command_trigger,
+                              lambda user_input: process_help_command(),
+                              'Print this help message'))
+  commands.extend(get_command(config_collection.change_session_command_trigger,
+                              lambda user_input: gpt_chat.change_session(),
+                              'Change chat session'))
+  commands.extend(get_command(config_collection.print_session_command_trigger,
+                              lambda user_input: gpt_chat.print_current_session(),
+                              'Print current session'))
+  commands.extend(get_command(config_collection.new_session_command_trigger,
+                              lambda user_input: gpt_chat.create_new_session(),
+                              'Create new session'))
+  commands.extend(get_command(config_collection.update_key_command_trigger,
+                              lambda user_input: ask_for_key_input(),
+                              'Update OpenAi credential key'))
+  commands.extend(get_command(config_collection.update_config_command_trigger,
+                              lambda user_input: update_config_value(gpt_chat),
+                              'Update config'))
+  commands.sort(key=lambda command: len(command.trigger), reverse=True)
 
-  commands += get_command(config_collection.supported_command_cli,
-                          lambda user_input: os.system(user_input),
-                          'Input is executed on the command line')
-  commands += get_command(config_collection.exit_command_trigger,
-                          lambda user_input: process_exit_command(),
-                          'Exit application')
-  commands += get_command(config_collection.help_command_trigger,
-                          lambda user_input: process_help_command(gpt_chat),
-                          'Print this help message')
-  commands += get_command(config_collection.change_session_command_trigger,
-                          lambda user_input: gpt_chat.change_session(),
-                          'Change chat session')
-  commands += get_command(config_collection.print_session_command_trigger,
-                          lambda user_input: gpt_chat.print_current_session(),
-                          'Print current session')
-  commands += get_command(config_collection.new_session_command_trigger,
-                          lambda user_input: gpt_chat.create_new_session(),
-                          'Create new session')
-  commands += get_command(config_collection.update_key_command_trigger,
-                          lambda user_input: ask_for_key_input(),
-                          'Update OpenAi credential key')
-  commands += get_command(config_collection.update_config_command_trigger,
-                          lambda user_input: update_config(),
-                          'Update config')
 
-
-  commands.sort(key=lambda c: len(c.trigger), reverse=True)
-
-  return commands
+def update_config_value(gpt_chat: GptChat):
+  update_config()
+  setup_command_triggers(gpt_chat)
 
 
 def get_command(entry: ConfigEntry, create_command_trigger: Callable, description: str) -> list[Command]:
-  commands: list[Command] = []
+  new_commands: list[Command] = []
   command_triggers = entry.get_value().split(config_array_delimiter)
 
   for trigger in command_triggers:
     stripped_trigger = trigger.strip()
     if len(stripped_trigger) > 0:
-      commands.append(Command(stripped_trigger, create_command_trigger, description))
+      new_commands.append(Command(stripped_trigger, create_command_trigger, description))
 
-  return commands
+  return new_commands
