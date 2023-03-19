@@ -82,13 +82,13 @@ class ConfigSet:
   )
   snippet_header_background_color = ConfigEntry(
     'snippet_header_background_color',
-    '#808080',
+    '#707070',
     'Snippet header background color',
     is_valid_color_code
   )
   snippet_theme = ConfigEntry(
     'snippet_theme',
-    'Monokai',
+    'monokai',
     'Snippet theme',
     None
   )

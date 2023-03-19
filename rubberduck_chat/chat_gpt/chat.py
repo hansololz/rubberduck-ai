@@ -150,7 +150,8 @@ class GptChatSession:
     else:
       header = f' {copy_message}'
 
-    syntax = Syntax(header, 'text', theme='monokai', background_color=self.configs.snippet_header_background_color)
+    syntax = Syntax(header, 'text', theme=self.configs.snippet_theme,
+                    background_color=self.configs.snippet_header_background_color)
     self.console.print(syntax, overflow='fold')
 
   def print_code(self, language: str, code: str):
