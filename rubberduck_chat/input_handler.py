@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, List
 
 from rubberduck_chat import __version__
 from rubberduck_chat.chat_gpt.chat import GptChat
@@ -24,7 +24,7 @@ class Command:
     self.description = description
 
 
-commands: list[Command] = []
+commands: List[Command] = []
 
 
 def start_evaluation_loop(gpt_chat: GptChat):
@@ -64,7 +64,7 @@ def print_get_help_message():
 
 
 def process_help_command():
-  description_to_command_map: dict[str, list[str]] = {}
+  description_to_command_map: dict[str, List[str]] = {}
 
   for command in commands:
     if command.description in description_to_command_map:
@@ -72,7 +72,7 @@ def process_help_command():
     else:
       description_to_command_map[command.description] = [command.trigger]
 
-  trigger_description_pairs: list[tuple[str, str]] = []
+  trigger_description_pairs: List[tuple[str, str]] = []
 
   for key in description_to_command_map.keys():
     triggers = description_to_command_map[key]
@@ -136,8 +136,8 @@ def update_config_value(gpt_chat: GptChat):
   gpt_chat.update_configs(get_gpt_chat_configs())
 
 
-def get_command(entry: ConfigEntry, create_command_trigger: Callable, description: str) -> list[Command]:
-  new_commands: list[Command] = []
+def get_command(entry: ConfigEntry, create_command_trigger: Callable, description: str) -> List[Command]:
+  new_commands: List[Command] = []
   command_triggers = entry.get_value().split(config_array_delimiter)
 
   for trigger in command_triggers:

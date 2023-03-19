@@ -5,7 +5,7 @@ import shelve
 import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
+from typing import Optional, List
 from uuid import uuid4
 
 from rubberduck_chat.store import rubberduck_dir_name
@@ -174,7 +174,7 @@ def create_get_gpt_session_dir():
 def remove_old_sessions(max_sessions):
   session_dir = get_gpt_session_dir_path()
   session_files = os.listdir(session_dir)
-  session_files_and_timestamps: list[tuple[str, int]] = []
+  session_files_and_timestamps: List[tuple[str, int]] = []
 
   if max_sessions == 0:
     for session_file in session_files:
@@ -203,9 +203,9 @@ def remove_old_sessions(max_sessions):
     os.remove(get_gpt_session_filepath(session_file))
 
 
-def get_all_session_previews() -> list[GptSessionPreview]:
+def get_all_session_previews() -> List[GptSessionPreview]:
   filenames = os.listdir(get_gpt_session_dir_path())
-  previews: list[GptSessionPreview] = []
+  previews: List[GptSessionPreview] = []
   active_session = get_active_session()
 
   for filename in filenames:
@@ -251,7 +251,7 @@ def get_most_recent_chat_turn(session_id: str) -> Optional[GptChatTurn]:
       return None
 
 
-def fetch_session_data(session_id: str) -> list[str]:
+def fetch_session_data(session_id: str) -> List[str]:
   with open(get_gpt_session_filepath(session_id), 'r') as file:
     return file.readlines()
 

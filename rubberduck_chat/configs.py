@@ -3,7 +3,7 @@ import os
 import platform
 import re
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, List
 
 import inquirer
 
@@ -150,7 +150,7 @@ class ConfigSet:
 
 
 config_collection = ConfigSet()
-config_collection_list: list[ConfigEntry] = [
+config_collection_list: List[ConfigEntry] = [
   config_collection.max_saved_session_count,
   config_collection.always_continue_last_session,
   config_collection.inactive_session_cutoff_time_in_seconds,
@@ -188,7 +188,7 @@ def setup_default_config(override_existing_configs: bool = False):
 
 
 def update_config():
-  options: list[tuple[str, ConfigEntry]] = [
+  options: List[tuple[str, ConfigEntry]] = [
     ('Reset all configs', ConfigEntry('reset_all', '', '', None))
   ]
 

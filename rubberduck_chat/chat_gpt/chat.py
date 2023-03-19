@@ -26,15 +26,15 @@ class GptChatSession:
 
   def __init__(self, session_id, configs: GptChatSessionConfigs, session_metadata: GptSessionMetadata,
                system_message: GptSystemMessage,
-               turns: list[GptChatTurn]):
+               turns: List[GptChatTurn]):
 
     self.session_id: str = session_id
     self.configs: GptChatSessionConfigs = configs
     self.session_metadata: GptSessionMetadata = session_metadata
     self.system_message: GptSystemMessage = system_message
-    self.turns: list[GptChatTurn] = turns
+    self.turns: List[GptChatTurn] = turns
     self.console: Console = Console()
-    self.snippets: list[str] = []
+    self.snippets: List[str] = []
 
   @classmethod
   def create_new(cls, configs: GptChatSessionConfigs):
@@ -44,11 +44,11 @@ class GptChatSession:
 
   @classmethod
   def from_session_id(cls, session_id: str, configs: GptChatSessionConfigs):
-    lines: list[str] = fetch_session_data(session_id)
+    lines: List[str] = fetch_session_data(session_id)
 
     gpt_session_metadata: GptSessionMetadata = GptSessionMetadata.from_line(lines[0])
     gpt_system_message: GptSystemMessage = GptSystemMessage.from_json_string(lines[1])
-    gpt_chat_turns: list[GptChatTurn] = []
+    gpt_chat_turns: List[GptChatTurn] = []
     turn_ids: set[str] = set()
 
     for line in lines[-1:1:-1]:
@@ -80,7 +80,7 @@ class GptChatSession:
     current_turn = GptChatTurn.from_user_prompt(prompt)
     self.store_chat_turn(current_turn)
     self.turns.append(current_turn)
-    messages: list[dict] = [self.system_message.get_chat_gpt_request_message()]
+    messages: List[dict] = [self.system_message.get_chat_gpt_request_message()]
 
     for turn in self.turns[-(self.configs.max_messages_per_request + 1):]:
       messages.append(turn.get_user_prompt_message())
@@ -109,7 +109,7 @@ class GptChatSession:
       print('No results found')
 
   def print_assistant_response(self, message: str):
-    new_snippets: list[str] = []
+    new_snippets: List[str] = []
     message_parts = message.split('\n')
 
     snippet = None
