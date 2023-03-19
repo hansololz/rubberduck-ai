@@ -1,6 +1,15 @@
+import atexit
+
 from setuptools import find_packages, setup
 
 from rubberduck_chat import __version__
+
+
+def print_message():
+  print('Type `rda` in the CLI to start the chat session.')
+
+
+atexit.register(print_message)
 
 with open('requirements.txt') as f:
   requirements = [line for line in f.read().splitlines() if line]
