@@ -41,7 +41,7 @@ class ConfigSet:
   )
   supported_command_cli = ConfigEntry(
     'supported_command_cli',
-    config_array_delimiter.join(['clear', 'ls', 'cd'] if platform.system() == 'Windows' else ['cls', 'dir', 'cd']),
+    config_array_delimiter.join(['cls', 'dir', 'cd'] if platform.system() == 'Windows' else ['clear', 'ls', 'cd']),
     ''
   )
   exit_command_trigger = ConfigEntry(
