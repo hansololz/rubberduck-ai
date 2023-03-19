@@ -35,5 +35,5 @@ setup(
       'rda = rubberduck_chat.rubberduck:main',
     ]
   },
-  license='CCPL',
+  license='MIT',
 )
