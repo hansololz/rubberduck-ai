@@ -6,11 +6,11 @@
 
     git clone https://github.com/hansololz/rubberduck-ai.git
     cd rubberduck-ai
-    python3 setup.py install
+    python setup.py install
 
 ### Installation (pip)
 
-    pip3 install rubberduck-ai
+    pip install rubberduck-ai
 
 ## Authentication
 
