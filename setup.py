@@ -36,5 +36,5 @@ setup(
       'rda = rubberduck_chat.rubberduck:main',
     ]
   },
-  license='MIT',
+  license='GPL',
 )
