@@ -144,7 +144,7 @@ class GptChatSession:
     print('')
 
   def print_header(self, language: str, count: int):
-    copy_message = f'Press "{count}" to copy snippet'
+    copy_message = f'Enter "{count}" to copy snippet'
 
     if language:
       header = f' {language.upper()} | {copy_message}'
