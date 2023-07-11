@@ -28,7 +28,8 @@ def setup_gpt(openai_api_key: Optional[str]) -> GptChat:
 
 
 def get_gpt_chat_configs() -> GptChatSessionConfigs:
-  return GptChatSessionConfigs(config_collection.max_messages_per_request.get_int_value(),
+  return GptChatSessionConfigs(config_collection.chat_gpt_model.get_value(),
+                               config_collection.max_messages_per_request.get_int_value(),
                                config_collection.snippet_header_background_color.get_value(),
                                config_collection.snippet_theme.get_value())
 

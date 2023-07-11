@@ -14,6 +14,7 @@ from dataclasses import dataclass
 
 @dataclass
 class GptChatSessionConfigs:
+  chat_gpt_model: str
   max_messages_per_request: int
   snippet_header_background_color: str
   snippet_theme: str
@@ -76,7 +77,7 @@ class GptChatSession:
       if assistant_response:
         self.print_assistant_response(assistant_response)
 
-  def process_prompt(self, prompt: str):
+  def process_prompt(self, prompt: str, configs: GptChatSessionConfigs):
     current_turn = GptChatTurn.from_user_prompt(prompt)
     self.store_chat_turn(current_turn)
     self.turns.append(current_turn)
@@ -93,7 +94,7 @@ class GptChatSession:
 
     with Halo(text='Fetching', spinner='dots'):
       try:
-        response = openai.ChatCompletion.create(model='gpt-3.5-turbo', messages=messages)
+        response = openai.ChatCompletion.create(model=configs.chat_gpt_model, messages=messages)
       except Exception as error:
         error_message = str(error)
 
@@ -192,7 +193,7 @@ class GptChat:
     self.configs = configs
 
   def process_prompt(self, prompt: str):
-    self.session.process_prompt(prompt)
+    self.session.process_prompt(prompt, self.configs)
 
   def create_new_session(self):
     self.session = GptChatSession.create_new(self.configs)

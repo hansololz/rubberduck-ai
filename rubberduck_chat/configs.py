@@ -81,6 +81,12 @@ class ConfigSet:
     'Creat new session if previous session is inactive for this many seconds',
     is_valid_int
   )
+  chat_gpt_model = ConfigEntry(
+    'chat_gpt_model',
+    'gpt-3.5-turbo',
+    'ChatGPT model; [gpt-3.5-turbo/gpt-4]',
+    None
+  )
   max_messages_per_request = ConfigEntry(
     'max_messages_per_request',
     str(10),
@@ -154,6 +160,7 @@ config_collection_list: List[ConfigEntry] = [
   config_collection.max_saved_session_count,
   config_collection.always_continue_last_session,
   config_collection.inactive_session_cutoff_time_in_seconds,
+  config_collection.chat_gpt_model,
   config_collection.max_messages_per_request,
   config_collection.snippet_header_background_color,
   config_collection.snippet_theme,
